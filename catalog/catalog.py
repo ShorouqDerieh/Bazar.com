@@ -1,5 +1,6 @@
 from flask import Flask
 from flask import jsonify #for json response
+from flask import request
 import sqlite3
 app = Flask(__name__)
 conn = sqlite3.connect("bazar.db")
@@ -19,6 +20,9 @@ def get_books(topic):
     c = conn.cursor()
     c.execute("SELECT * FROM books WHERE topic=?",(topic,))
     books=c.fetchall()
+    if not books:
+        conn.close()
+        return jsonify({"error":"No books found for this topic"}),404
     returned_books=[]
     for book in books:
         returned_books.append({
@@ -49,3 +53,21 @@ def get_book_by_id(id):
     else:
         conn.close()
         return jsonify({"error":"Book not found"}),404
+@app.route("/update")
+def update_book():
+    conn = sqlite3.connect("bazar.db",check_same_thread=False)
+    c = conn.cursor()
+    id=request.json.get("id")
+    quantity=request.json.get("quantity")
+    price=request.json.get("price")
+    if quantity:
+        c.execute("UPDATE books SET quantity=? WHERE id=?",(quantity,id))
+        return jsonify({"message":"Book quantity updated"})
+    if price:
+        c.execute("UPDATE books SET price=? WHERE id=?",(price,id))
+        return jsonify({"message":"Book price updated"})
+        if not id:
+            conn.close()
+            return jsonify({"error":"Book id is required"}),400
+    conn.commit()
+    conn.close()
