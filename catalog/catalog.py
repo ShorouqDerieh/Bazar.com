@@ -90,10 +90,6 @@ def update_book(id):
     if not updates:
         conn.close()
         return jsonify({"error":"No updates provided"}),400
-    """ c.execute("SELECT * FROM books WHERE id = ?", (id,))
-    if not c.fetchone():
-        conn.close()
-        return jsonify({"error": "Book not found"}), 404 """
     params.append(id)
     q = "UPDATE books SET " + ", ".join(updates) + " WHERE id=?"
     c.execute(q,params)
