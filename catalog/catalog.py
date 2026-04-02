@@ -34,7 +34,7 @@ def get_books(topic):
         })
     conn.close()
     return jsonify(returned_books)  
-@app.route("/search/<int:id>")
+@app.route("/info/<int:id>")
 def get_book_by_id(id):
     conn = sqlite3.connect("bazar.db",check_same_thread=False)
     c = conn.cursor()
@@ -53,21 +53,50 @@ def get_book_by_id(id):
     else:
         conn.close()
         return jsonify({"error":"Book not found"}),404
-@app.route("/update")
-def update_book():
+@app.route("/update/<int:id>",methods=["PUT"])
+def update_book(id):
     conn = sqlite3.connect("bazar.db",check_same_thread=False)
     c = conn.cursor()
-    id=request.json.get("id")
     quantity=request.json.get("quantity")
     price=request.json.get("price")
-    if quantity:
-        c.execute("UPDATE books SET quantity=? WHERE id=?",(quantity,id))
-        return jsonify({"message":"Book quantity updated"})
-    if price:
-        c.execute("UPDATE books SET price=? WHERE id=?",(price,id))
-        return jsonify({"message":"Book price updated"})
-        if not id:
+    """ if not id:
             conn.close()
-            return jsonify({"error":"Book id is required"}),400
+            return jsonify({"error":"Book id is required"}),400 """
+    c.execute("SELECT quantity FROM books WHERE id = ?", (id,))
+    result = c.fetchone()
+
+    if not result:
+     conn.close()
+     return jsonify({"error": "Book not found"}), 404
+
+    current_quantity = result[0]
+    if quantity is not None:
+        new_quantity = current_quantity + quantity
+        if new_quantity < 0:
+            conn.close()
+            return jsonify({"error": "Quantity cannot be negative"}), 400
+    updates = []
+    params = []
+    if quantity is not None:
+        updates.append("quantity=quantity+?")
+        params.append(quantity)
+       # c.execute("UPDATE books SET quantity=? WHERE id=?",(quantity,id))
+       # return jsonify({"message":"Book quantity updated"})
+    if price is not None:
+        updates.append("price=?")
+        params.append(price)
+        #c.execute("UPDATE books SET price=? WHERE id=?",(price,id))
+        #return jsonify({"message":"Book price updated"})
+    if not updates:
+        conn.close()
+        return jsonify({"error":"No updates provided"}),400
+    """ c.execute("SELECT * FROM books WHERE id = ?", (id,))
+    if not c.fetchone():
+        conn.close()
+        return jsonify({"error": "Book not found"}), 404 """
+    params.append(id)
+    q = "UPDATE books SET " + ", ".join(updates) + " WHERE id=?"
+    c.execute(q,params)
     conn.commit()
     conn.close()
+    return jsonify({"message":"Book updated successfully"})
