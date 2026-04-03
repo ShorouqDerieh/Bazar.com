@@ -15,7 +15,6 @@ CREATE TABLE IF NOT EXISTS orders (
 """)
 conn.commit()
 conn.close()
-
 CATALOG_URL = "http://127.0.0.1:5000"
 @app.route("/purchase/<int:item_id>", methods=["POST"])
 def purchase(item_id):
