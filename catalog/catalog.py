@@ -23,17 +23,19 @@ def get_books(topic):
     if not books:
         conn.close()
         return jsonify({"error":"No books found for this topic"}),404
-    returned_books=[]
+    returned_books={}
     for book in books:
-        returned_books.append({
+       """  returned_books.append({
             "id":book[0],
             "title":book[1],
             "topic":book[2],
             "price":book[3],
             "quantity":book[4]
-        })
+        }) """
+       returned_books[book[1]] = book[0]
     conn.close()
-    return jsonify(returned_books)  
+  #  return jsonify(returned_books)  
+    return jsonify({"items": returned_books})
 @app.route("/info/<int:id>")
 def get_book_by_id(id):
     conn = sqlite3.connect("bazar.db",check_same_thread=False)
