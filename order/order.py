@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS orders (
     item_id INTEGER
 )
 """)
-
 conn.commit()
 conn.close()
 
