@@ -33,6 +33,7 @@ def get_books(topic):
             "quantity":book[4]
         }) """
        returned_books[book[1]] = book[0]
+       print(f"Book Title: {book[1]}, Book ID: {book[0]}")
     conn.close()
   #  return jsonify(returned_books)  
     return jsonify({"items": returned_books})
@@ -98,3 +99,5 @@ def update_book(id):
     conn.commit()
     conn.close()
     return jsonify({"message":"Book updated successfully"})
+if __name__ == '__main__':
+    app.run(host="0.0.0.0",port=5000)

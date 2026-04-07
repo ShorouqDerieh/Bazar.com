@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS orders (
 conn.commit()
 conn.close()
 
-CATALOG_URL = "http://127.0.0.1:5000"
+CATALOG_URL = "http://catalog:5000"
 @app.route("/purchase/<int:item_id>", methods=["POST"])
 def purchase(item_id):
     res = requests.get(f"{CATALOG_URL}/info/{item_id}")
@@ -37,4 +37,7 @@ def purchase(item_id):
     c.execute("INSERT INTO orders (item_id) VALUES (?)", (item_id,))
     conn.commit()
     conn.close()
+    print(f"bought book {book['title']}")
     return jsonify({"message": "Purchase successful"})
+if __name__ == '__main__':
+    app.run(host="0.0.0.0", port=5001)
