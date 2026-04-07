@@ -20,6 +20,7 @@ def get_books(topic):
     c = conn.cursor()
     c.execute("SELECT * FROM books WHERE topic=?",(topic,))
     books=c.fetchall()
+    print("DEBUG: books =", books, flush=True)
     if not books:
         conn.close()
         return jsonify({"error":"No books found for this topic"}),404
@@ -32,8 +33,9 @@ def get_books(topic):
             "price":book[3],
             "quantity":book[4]
         }) """
+       #print(f"Book Title: {book[1]}, Book ID: {book[0]}", flush=True)
        returned_books[book[1]] = book[0]
-       print(f"Book Title: {book[1]}, Book ID: {book[0]}")
+       print(f"Book Title: {book[1]}, Book ID: {book[0]}", flush=True)
     conn.close()
   #  return jsonify(returned_books)  
     return jsonify({"items": returned_books})

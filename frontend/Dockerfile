@@ -6,4 +6,4 @@ COPY . .
 
 RUN pip install flask requests
 
-CMD ["python", "frontend.py"]
+CMD ["python", "-u", "frontend.py"]

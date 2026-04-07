@@ -6,4 +6,4 @@ COPY . .
 
 RUN pip install flask requests
 
-CMD ["python", "order.py"]
+CMD ["python", "-u", "order.py"]

@@ -28,7 +28,7 @@ def purchase(item_id):
         return jsonify({"error": "Book not found"}), 404
 
     book = res.json()
-
+    print(f"bought book {book['title']}", flush=True)
     if book["quantity"] <= 0:
         print(f"Order: book {item_id} out of stock")
         return jsonify({"error": "Out of stock"}), 400

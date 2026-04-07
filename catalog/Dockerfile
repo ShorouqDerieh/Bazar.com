@@ -3,4 +3,4 @@ WORKDIR /app
 COPY . .
 RUN pip install flask
 RUN pip install requests
-CMD ["python", "catalog.py"]
+CMD ["python", "-u", "catalog.py"]
