@@ -1,20 +1,54 @@
 services:
-  catalog:
+  catalog1:
     build: ./catalog
+    container_name: catalog1
     ports:
       - "5000:5000"
+    environment:
+      - INSTANCE_NAME=catalog1
 
-  order:
+  catalog2:
+    build: ./catalog
+    container_name: catalog2
+    ports:
+      - "5003:5000"
+    environment:
+      - INSTANCE_NAME=catalog2
+
+  order1:
     build: ./order
+    container_name: order1
     ports:
       - "5001:5001"
+    environment:
+      - INSTANCE_NAME=order1
+      - CATALOG_REPLICAS=http://catalog1:5000,http://catalog2:5000
     depends_on:
-      - catalog
+      - catalog1
+      - catalog2
+
+  order2:
+    build: ./order
+    container_name: order2
+    ports:
+      - "5004:5001"
+    environment:
+      - INSTANCE_NAME=order2
+      - CATALOG_REPLICAS=http://catalog1:5000,http://catalog2:5000
+    depends_on:
+      - catalog1
+      - catalog2
 
   frontend:
     build: ./frontend
+    container_name: frontend
     ports:
       - "5002:5002"
+    environment:
+      - CATALOG_REPLICAS=http://catalog1:5000,http://catalog2:5000
+      - ORDER_REPLICAS=http://order1:5001,http://order2:5001
     depends_on:
-      - catalog
-      - order
+      - catalog1
+      - catalog2
+      - order1
+      - order2
