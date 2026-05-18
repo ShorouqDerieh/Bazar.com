@@ -2,7 +2,9 @@ from flask import Flask
 from flask import jsonify #for json response
 from flask import request
 import sqlite3
+import os
 app = Flask(__name__)
+INSTANCE_NAME = os.getenv("INSTANCE_NAME", "catalog")
 conn = sqlite3.connect("bazar.db")
 c = conn.cursor()
 
@@ -12,6 +14,9 @@ c.execute("INSERT OR IGNORE INTO books VALUES (1,'How to get a good grade in DOS
 c.execute("INSERT OR IGNORE INTO books VALUES (2,'RPCs for Noobs','distributed systems',50.0,200)")
 c.execute("INSERT OR IGNORE INTO books VALUES (3,'Xen and the Art of Surviving Undergraduate School','undergraduate school',30.0,150)")
 c.execute("INSERT OR IGNORE INTO books VALUES (4,'Cooking for the Impatient Undergrad','undergraduate school',20.0,100)") 
+c.execute("INSERT OR IGNORE INTO books VALUES (5, 'How to finish Project 3 on time', 'project management', 35.0, 100)")
+c.execute("INSERT OR IGNORE INTO books VALUES (6, 'Why theory classes are so hard.', 'theory', 40.0, 100)")
+c.execute("INSERT OR IGNORE INTO books VALUES (7, 'Spring in the Pioneer Valley', 'fiction', 25.0, 100)")
 conn.commit()
 conn.close()
 @app.route('/search/<string:topic>')
@@ -38,7 +43,9 @@ def get_books(topic):
        print(f"Book Title: {book[1]}, Book ID: {book[0]}", flush=True)
     conn.close()
   #  return jsonify(returned_books)  
-    return jsonify({"items": returned_books})
+    return jsonify({
+        "served_by": INSTANCE_NAME,
+        "items": returned_books})
 @app.route("/info/<int:id>")
 def get_book_by_id(id):
     conn = sqlite3.connect("bazar.db",check_same_thread=False)
@@ -47,6 +54,7 @@ def get_book_by_id(id):
     book=c.fetchone()
     if book:
         returned_book={
+            "served_by": INSTANCE_NAME,
             "id":book[0],
             "title":book[1],
             "topic":book[2],
@@ -100,6 +108,9 @@ def update_book(id):
     c.execute(q,params)
     conn.commit()
     conn.close()
-    return jsonify({"message":"Book updated successfully"})
+    return jsonify({
+        "message":"Book updated successfully",
+        "served_by": INSTANCE_NAME
+    })
 if __name__ == '__main__':
     app.run(host="0.0.0.0",port=5000)
