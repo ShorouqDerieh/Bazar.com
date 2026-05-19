@@ -106,12 +106,14 @@ def info(item_id):
 
 @app.route("/purchase/<int:item_id>", methods=["POST"])
 def purchase(item_id):
-    # Write -> always forward, never use cache
+    # Write -> always forward, never use cache.
+    # Invalidate cached book info before purchase to avoid stale data.
+    cache_invalidate(item_id)
+
     order = pick_order()
     print(f"[Frontend] purchase id={item_id} -> {order}", flush=True)
     res = requests.post(f"{order}/purchase/{item_id}", timeout=5)
     return jsonify(res.json()), res.status_code
-
 
 @app.route("/invalidate/<int:book_id>", methods=["POST"])
 def invalidate(book_id):
