@@ -3,8 +3,12 @@ from flask import jsonify #for json response
 from flask import request
 import sqlite3
 import os
+
+import requests
+impot
 app = Flask(__name__)
 INSTANCE_NAME = os.getenv("INSTANCE_NAME", "catalog")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://frontend:5002")
 conn = sqlite3.connect("bazar.db")
 c = conn.cursor()
 
@@ -19,6 +23,12 @@ c.execute("INSERT OR IGNORE INTO books VALUES (6, 'Why theory classes are so har
 c.execute("INSERT OR IGNORE INTO books VALUES (7, 'Spring in the Pioneer Valley', 'fiction', 25.0, 100)")
 conn.commit()
 conn.close()
+def invalidate_frontend_cache(book_id):
+    try:
+        requests.post(f"{FRONTEND_URL}/invalidate/{book_id}", timeout=2)
+        print(f"{INSTANCE_NAME}: invalidated frontend cache for book {book_id}", flush=True)
+    except requests.exceptions.RequestException as e:
+        print(f"{INSTANCE_NAME}: cache invalidation failed: {e}", flush=True)
 @app.route('/search/<string:topic>')
 def get_books(topic):
     conn = sqlite3.connect("bazar.db",check_same_thread=False)
@@ -105,6 +115,7 @@ def update_book(id):
         return jsonify({"error":"No updates provided"}),400
     params.append(id)
     q = "UPDATE books SET " + ", ".join(updates) + " WHERE id=?"
+    invalidate_frontend_cache(id)
     c.execute(q,params)
     conn.commit()
     conn.close()

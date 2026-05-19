@@ -6,7 +6,7 @@ services:
       - "5000:5000"
     environment:
       - INSTANCE_NAME=catalog1
-
+      - FRONTEND_URL=http://frontend:5002
   catalog2:
     build: ./catalog
     container_name: catalog2
@@ -14,7 +14,7 @@ services:
       - "5003:5000"
     environment:
       - INSTANCE_NAME=catalog2
-
+      - FRONTEND_URL=http://frontend:5002
   order1:
     build: ./order
     container_name: order1
