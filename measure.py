@@ -1,27 +1,10 @@
-"""
-measure.py  -  Bazar.com Lab 2 Performance Measurement
-=======================================================
-Measures:
-  1. Average response time for /info  WITH cache (after warm-up)
-  2. Average response time for /info  WITHOUT cache (cold / after invalidation)
-  3. Average response time for /purchase
-  4. Cache consistency overhead (invalidation latency)
-  5. Cache miss latency after invalidation
-
-Run AFTER docker compose up --build:
-    python measure.py
-"""
-
 import requests
 import time
 import statistics
 
 BASE      = "http://localhost:5002"
-BOOK_ID   = 2          # RPCs for Noobs
-ROUNDS    = 20         # requests per experiment
-
-# ─────────────────────────────────────────────────────────────────────────────
-
+BOOK_ID   = 2          
+ROUNDS    = 20        
 def avg_ms(times):
     return round(statistics.mean(times) * 1000, 2)
 
@@ -50,15 +33,9 @@ def measure_purchase(book_id=BOOK_ID, n=5):
 def reset_cache(book_id=BOOK_ID):
     """Force cache miss by sending invalidate directly."""
     requests.post(f"{BASE}/invalidate/{book_id}")
-
-# =============================================================================
-#  EXPERIMENT 1: Cache MISS vs HIT latency
-# =============================================================================
 print("\n" + "="*60)
 print("EXPERIMENT 1: Cache MISS vs HIT response time")
 print("="*60)
-
-# Cold (MISS): clear cache then measure first request
 print(f"\n[a] Cold requests (cache MISS) — {ROUNDS} calls, clearing cache before each:")
 miss_times = []
 for i in range(ROUNDS):
@@ -68,35 +45,22 @@ for i in range(ROUNDS):
     miss_times.append(time.perf_counter() - t0)
 print(f"  MISS avg={avg_ms(miss_times)} ms | median={median_ms(miss_times)} ms | "
       f"min={round(min(miss_times)*1000,2)} ms | max={round(max(miss_times)*1000,2)} ms")
-
-# Warm (HIT): one miss to populate, then measure hits
 print(f"\n[b] Warm requests (cache HIT) — {ROUNDS} calls after warm-up:")
 requests.get(f"{BASE}/info/{BOOK_ID}")   # warm-up
 hit_times = measure_info("HIT ", book_id=BOOK_ID, n=ROUNDS)
 
 speedup = round(avg_ms(miss_times) / avg_ms(hit_times), 1) if avg_ms(hit_times) > 0 else "N/A"
 print(f"\n  --> Cache speedup: {speedup}x faster with cache")
-
-# =============================================================================
-#  EXPERIMENT 2: Purchase (write) response time
-# =============================================================================
 print("\n" + "="*60)
 print("EXPERIMENT 2: Purchase response time (book id=5, qty=80)")
 print("="*60)
 purchase_times = measure_purchase(book_id=5, n=5)
-
-# =============================================================================
-#  EXPERIMENT 3: Cache consistency overhead
-# =============================================================================
 print("\n" + "="*60)
 print("EXPERIMENT 3: Cache consistency — invalidation overhead")
 print("="*60)
 
-# Populate cache
 requests.get(f"{BASE}/info/{BOOK_ID}")
 print(f"\n[a] Cache populated for book_id={BOOK_ID}")
-
-# Measure invalidation call latency
 inv_times = []
 for _ in range(ROUNDS):
     # re-populate first
@@ -107,8 +71,6 @@ for _ in range(ROUNDS):
 
 print(f"  Invalidation avg={avg_ms(inv_times)} ms | "
       f"median={median_ms(inv_times)} ms")
-
-# Miss after invalidation
 print(f"\n[b] First request after invalidation (should be MISS):")
 miss_after = []
 for _ in range(ROUNDS):
@@ -117,10 +79,6 @@ for _ in range(ROUNDS):
     requests.get(f"{BASE}/info/{BOOK_ID}")
     miss_after.append(time.perf_counter() - t0)
 print(f"  Post-invalidation MISS avg={avg_ms(miss_after)} ms")
-
-# =============================================================================
-#  SUMMARY TABLE
-# =============================================================================
 print("\n" + "="*60)
 print("PERFORMANCE SUMMARY TABLE")
 print("="*60)
@@ -134,7 +92,6 @@ print(f"{'Post-invalidation MISS':<35} {avg_ms(miss_after):>10} {median_ms(miss_
 print("-"*60)
 print(f"  Cache speedup: {speedup}x")
 
-# Cache stats
 print("\n[Cache Stats from server]")
 r = requests.get(f"{BASE}/cache/stats")
 print(" ", r.json())

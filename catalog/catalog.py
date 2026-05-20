@@ -5,7 +5,6 @@ import sqlite3
 import os
 
 import requests
-impot
 app = Flask(__name__)
 INSTANCE_NAME = os.getenv("INSTANCE_NAME", "catalog")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://frontend:5002")

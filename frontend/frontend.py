@@ -4,12 +4,8 @@ import threading
 import time
 
 app = Flask(__name__)
-
-# ── Replica lists (شخص 1 بيحدد هاي) ─────────────────────────────────────────
 CATALOG_REPLICAS = ["http://catalog1:5000", "http://catalog2:5000"]
 ORDER_REPLICAS   = ["http://order1:5001",   "http://order2:5001"]
-
-# ── Round-robin counters ──────────────────────────────────────────────────────
 _lock        = threading.Lock()
 _catalog_idx = 0
 _order_idx   = 0
@@ -29,21 +25,13 @@ def pick_order():
         _order_idx += 1
     print(f"[LB] Order request -> {url}", flush=True)
     return url
-
-# =============================================================================
-#  IN-MEMORY CACHE
-#  Structure: { book_id (int) -> { data: dict, timestamp: float } }
-# =============================================================================
 MAX_CACHE   = 50
 _cache      = {}
 _cache_lock = threading.Lock()
-
-# Hit/Miss stats
 _hits   = 0
 _misses = 0
 
 def cache_get(book_id: int):
-    """Return cached data or None. Logs HIT/MISS."""
     global _hits, _misses
     with _cache_lock:
         entry = _cache.get(book_id)
@@ -58,7 +46,6 @@ def cache_get(book_id: int):
         return None
 
 def cache_put(book_id: int, data: dict):
-    """Store item in cache. Evict oldest if full (simple LRU-lite)."""
     with _cache_lock:
         if len(_cache) >= MAX_CACHE:
             oldest_key = next(iter(_cache))
@@ -68,18 +55,12 @@ def cache_put(book_id: int, data: dict):
     print(f"[Cache] Stored book_id={book_id} | cache_size={len(_cache)}", flush=True)
 
 def cache_invalidate(book_id: int):
-    """Remove item from cache when a write happens."""
     with _cache_lock:
         removed = _cache.pop(book_id, None)
     if removed:
         print(f"[Cache] Invalidated book_id={book_id}", flush=True)
     else:
         print(f"[Cache] Invalidate: book_id={book_id} was not in cache", flush=True)
-
-# =============================================================================
-#  ROUTES
-# =============================================================================
-
 @app.route("/search/<string:topic>")
 def search(topic):
     catalog = pick_catalog()
@@ -90,12 +71,9 @@ def search(topic):
 
 @app.route("/info/<int:item_id>")
 def info(item_id):
-    # 1. Check cache
     cached = cache_get(item_id)
     if cached:
         return jsonify(cached)
-
-    # 2. Cache miss -> forward to catalog replica
     catalog = pick_catalog()
     print(f"[Frontend] info id={item_id} -> {catalog}", flush=True)
     res = requests.get(f"{catalog}/info/{item_id}", timeout=5)
@@ -106,8 +84,6 @@ def info(item_id):
 
 @app.route("/purchase/<int:item_id>", methods=["POST"])
 def purchase(item_id):
-    # Write -> always forward, never use cache.
-    # Invalidate cached book info before purchase to avoid stale data.
     cache_invalidate(item_id)
 
     order = pick_order()
@@ -117,14 +93,8 @@ def purchase(item_id):
 
 @app.route("/invalidate/<int:book_id>", methods=["POST"])
 def invalidate(book_id):
-    """Called by catalog replicas after any write."""
     cache_invalidate(book_id)
     return jsonify({"message": f"Cache invalidated for book {book_id}"})
-
-
-# =============================================================================
-#  DEBUG ENDPOINTS
-# =============================================================================
 
 @app.route("/cache")
 def show_cache():
